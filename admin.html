@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BNH Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--teal:#0d7377;--tealdark:#0a5559;--green:#3fae4f;--gold:#e8a13d;--ink:#12242a;--muted:#6b7c7d;--line:#dcece9;--bg:#f4faf9}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink)}
+h1,h2{font-family:'Poppins',sans-serif;font-weight:800}
+.wrap{max-width:900px;margin:0 auto;padding:20px}
+.card{background:#fff;border-radius:16px;padding:22px;margin-bottom:20px;border:1px solid var(--line)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.tabbtn{padding:10px 18px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:700;cursor:pointer}
+.tabbtn.active{background:var(--ink);color:#fff}
+.small{color:var(--muted);font-size:12px}
+.rangeBtn{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.rangeBtn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px}
+.grid2 div{display:flex;flex-direction:column}
+label{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
+input,textarea,select{padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-family:inherit;font-size:14px}
+button{cursor:pointer;font-family:inherit}
+.btn{background:var(--teal);color:#fff;border:none;padding:12px 20px;border-radius:12px;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
+.scroll{overflow-x:auto}
+.stat{background:#f0f8f7;border-radius:12px;padding:14px}
+.prodrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);gap:10px}
+.prodrow img{width:44px;height:44px;border-radius:8px;object-fit:cover;background:#eef7f5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>BNH Admin</h1>
+  <div class="tabs">
+    <button class="tabbtn active" data-tab="dashboard" onclick="showTab('dashboard',this)">Dashboard</button>
+    <button class="tabbtn" data-tab="products" onclick="showTab('products',this)">Products</button>
+    <button class="tabbtn" data-tab="orders" onclick="showTab('orders',this)">Orders</button>
+  </div>
+
+  <div id="tab-dashboard">
+    <div class="card">
+      <h2>Store Analytics</h2>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <button class="rangeBtn active" data-range="day" onclick="setDashRange('day',this)">Today</button>
+        <button class="rangeBtn" data-range="week" onclick="setDashRange('week',this)">This Week</button>
+        <button class="rangeBtn" data-range="month" onclick="setDashRange('month',this)">This Month</button>
+        <button class="rangeBtn" data-range="all" onclick="setDashRange('all',this)">All Time</button>
+        <button class="rangeBtn" data-range="custom" onclick="setDashRange('custom',this)">Custom</button>
+      </div>
+      <div id="customRangeRow" style="display:none;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:12px">
+        <div><label>From</label><input type="date" id="customFrom"></div>
+        <div><label>To</label><input type="date" id="customTo"></div>
+        <button class="rangeBtn" style="background:var(--gold);color:#12242a;border-color:var(--gold)" onclick="applyCustomRange()">Apply</button>
+      </div>
+      <p class="small" id="dashRange">Loading...</p>
+      <div class="grid2">
+        <div class="stat"><div class="small">Visitors (Page Views)</div><div style="font-size:28px;font-weight:800" id="statVisitors">0</div></div>
+        <div class="stat"><div class="small">Added to Cart</div><div style="font-size:28px;font-weight:800" id="statCart">0</div></div>
+        <div class="stat"><div class="small">Checkout Started</div><div style="font-size:28px;font-weight:800" id="statCheckout">0</div></div>
+        <div class="stat"><div class="small">Orders Placed</div><div style="font-size:28px;font-weight:800" id="statOrders">0</div></div>
+      </div>
+      <p class="small" id="statConversion"></p>
+      <div style="position:relative;width:100%;height:220px;margin-top:16px">
+        <canvas id="dashChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h2 style="font-size:20px">Most Viewed / Added Products</h2>
+      <div class="scroll"><table><thead><tr><th>Product</th><th>Added to Cart</th></tr></thead><tbody id="topProducts"></tbody></table></div>
+    </div>
+  </div>
+
+  <div id="tab-products" style="display:none">
+    <div class="card">
+      <h2 id="prodFormTitle" style="font-size:20px">Add / Edit Product</h2>
+      <input type="hidden" id="productId">
+      <div class="grid2">
+        <div><label>Name</label><input id="pName" placeholder="Product name"></div>
+        <div><label>Category</label><input id="pCategory" placeholder="e.g. Skincare"></div>
+        <div><label>Price (Rs.)</label><input id="pPrice" type="number" min="0"></div>
+        <div><label>Badge (optional)</label><input id="pBadge" placeholder="e.g. NEW / SALE"></div>
+        <div><label>Original Price (optional)</label><input id="pOriginalPrice" type="number" min="0"></div>
+        <div><label>Stock Count (optional)</label><input id="pStockCount" type="number" min="0"></div>
+        <div><label>Rating (0-5, optional)</label><input id="pRating" type="number" min="0" max="5" step="0.1"></div>
+        <div><label>Active</label><select id="pActive"><option value="true">Yes</option><option value="false">No</option></select></div>
+      </div>
+      <div style="margin-bottom:12px"><label>Image URL(s) — comma separated</label><input id="pImages" placeholder="https://..."></div>
+      <div style="margin-bottom:12px"><label>Description</label><textarea id="pDesc" rows="3"></textarea></div>
+      <button class="btn" id="saveProduct">Save Product</button>
+      <button class="btn" id="clearProduct" style="background:#fff;color:var(--ink);border:1px solid var(--line);margin-left:8px">Clear</button>
+    </div>
+    <div class="card">
+      <h2 style="font-size:20px">All Products</h2>
+      <div id="productList"></div>
+    </div>
+  </div>
+
+  <div id="tab-orders" style="display:none">
+    <div class="card">
+      <h2 style="font-size:20px">Orders</h2>
+      <div id="ordersList"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const firebaseConfig={apiKey:"AIzaSyBQjznWQmgiUTY-997raAlVRHJGdvsJ_tM",authDomain:"bnho-e1ec4.firebaseapp.com",projectId:"bnho-e1ec4",storageBucket:"bnho-e1ec4.firebasestorage.app",messagingSenderId:"965466036103",appId:"1:965466036103:web:cfc2d5f0f05baff6066522"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
+const $=id=>document.getElementById(id);
+function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+function showTab(tab,btn){
+  ['dashboard','products','orders'].forEach(t=>{$('tab-'+t).style.display=(t===tab)?'block':'none'});
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(tab==='products')loadProductList();
+  if(tab==='orders')loadOrders();
+}
+
+/* ---------- Dashboard ---------- */
+let currentDashRange='day';
+let customFromIso=null,customToIso=null;
+function getRangeBounds(range){
+  const now=new Date();
+  if(range==='day')return {start:new Date(now.getFullYear(),now.getMonth(),now.getDate()),end:null};
+  if(range==='week'){const d=new Date(now);d.setDate(d.getDate()-d.getDay());d.setHours(0,0,0,0);return {start:d,end:null}}
+  if(range==='month')return {start:new Date(now.getFullYear(),now.getMonth(),1),end:null};
+  if(range==='custom')return {start:customFromIso,end:customToIso};
+  return {start:null,end:null};
+}
+function setDashRange(range,btn){
+  currentDashRange=range;
+  document.querySelectorAll('.rangeBtn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  const row=$('customRangeRow');
+  if(range==='custom'){
+    row.style.display='flex';
+    if(!customFromIso){$('dashRange').textContent='Pick a date range and tap Apply';return}
+  }else{row.style.display='none'}
+  loadDashboard();
+}
+function applyCustomRange(){
+  const fromVal=$('customFrom').value,toVal=$('customTo').value;
+  if(!fromVal||!toVal){alert('Please pick both From and To dates');return}
+  if(fromVal>toVal){alert('"From" date must be before "To" date');return}
+  customFromIso=new Date(fromVal+'T00:00:00');
+  customToIso=new Date(toVal+'T23:59:59');
+  loadDashboard();
+}
+async function loadDashboard(){
+  $('dashRange').textContent='Loading...';
+  try{
+    const {start,end}=getRangeBounds(currentDashRange);
+    let eventsQuery=db.collection('analytics_events');
+    let ordersQuery=db.collection('orders');
+    if(start){eventsQuery=eventsQuery.where('created_at','>=',start);ordersQuery=ordersQuery.where('created_at','>=',start)}
+    if(end){eventsQuery=eventsQuery.where('created_at','<=',end);ordersQuery=ordersQuery.where('created_at','<=',end)}
+    const [eventsSnap,ordersSnap,productsSnap]=await Promise.all([
+      eventsQuery.get(),ordersQuery.get(),db.collection('products').get()
+    ]);
+    const events=eventsSnap.docs.map(d=>d.data());
+    const visitors=events.filter(e=>e.event_type==='page_view').length;
+    const addCart=events.filter(e=>e.event_type==='add_to_cart').length;
+    const checkout=events.filter(e=>e.event_type==='checkout_start').length;
+    const orderCount=ordersSnap.size;
+    $('statVisitors').textContent=visitors;
+    $('statCart').textContent=addCart;
+    $('statCheckout').textContent=checkout;
+    $('statOrders').textContent=orderCount;
+    let rangeLabel={day:'Today',week:'This week',month:'This month',all:'All-time totals'}[currentDashRange];
+    if(currentDashRange==='custom')rangeLabel=start?`${$('customFrom').value} to ${$('customTo').value}`:'Pick a date range and tap Apply';
+    $('dashRange').textContent=rangeLabel;
+    const conv=visitors?((orderCount/visitors)*100).toFixed(1):'0';
+    $('statConversion').textContent=`Conversion rate: ${conv}% of visitors placed an order`;
+    const nameMap={};
+    productsSnap.docs.forEach(d=>nameMap[d.id]=d.data().name);
+    const counts={};
+    events.filter(e=>e.event_type==='add_to_cart'&&e.product_id).forEach(e=>{counts[e.product_id]=(counts[e.product_id]||0)+1});
+    const rows=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,15);
+    $('topProducts').innerHTML=rows.length?rows.map(([pid,c])=>`<tr><td>${esc(nameMap[pid]||'Unknown product')}</td><td>${c}</td></tr>`).join(''):'<tr><td colspan="2">No data yet</td></tr>';
+    renderDashChart(visitors,addCart,checkout,orderCount);
+  }catch(err){
+    $('dashRange').textContent='Error loading analytics: '+(err?.message||err);
+  }
+}
+let dashChartInstance=null;
+function renderDashChart(visitors,addCart,checkout,orders){
+  const ctx=$('dashChart');if(!ctx)return;
+  const data=[visitors,addCart,checkout,orders];
+  if(dashChartInstance){dashChartInstance.data.datasets[0].data=data;dashChartInstance.update();return}
+  dashChartInstance=new Chart(ctx,{
+    type:'bar',
+    data:{labels:['Visitors','Added to Cart','Checkout Started','Orders Placed'],datasets:[{data,backgroundColor:['#8fd3d0','#4fb3ae','#0d7377','#0a5559'],borderRadius:4,barThickness:36}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b7c7d'}},y:{beginAtZero:true,grid:{color:'#dcece9'},ticks:{color:'#6b7c7d'}}}}
+  });
+}
+loadDashboard();
+
+/* ---------- Products ---------- */
+async function loadProductList(){
+  const snap=await db.collection('products').get();
+  const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+  $('productList').innerHTML=items.length?items.map(p=>`
+    <div class="prodrow">
+      <img src="${(p.images||'').split(',')[0].trim()}" alt="">
+      <div style="flex:1">
+        <div style="font-weight:700">${esc(p.name)}</div>
+        <div class="small">${esc(p.category||'')} · Rs. ${p.price||0}</div>
+      </div>
+      <button class="btn" style="padding:8px 12px" onclick='editProduct(${JSON.stringify(p).replace(/'/g,"&#39;")})'>Edit</button>
+      <button class="btn" style="padding:8px 12px;background:#c0392b" onclick="deleteProduct('${p.id}')">Delete</button>
+    </div>`).join(''):'<p class="small">No products yet.</p>';
+}
+function editProduct(p){
+  $('productId').value=p.id;$('pName').value=p.name||'';$('pCategory').value=p.category||'';$('pPrice').value=p.price||'';
+  $('pBadge').value=p.badge||'';$('pImages').value=p.images||'';$('pDesc').value=p.description||'';
+  $('pOriginalPrice').value=p.original_price||'';$('pStockCount').value=(p.stock_count===0||p.stock_count)?p.stock_count:'';$('pRating').value=p.rating||'';
+  $('pActive').value=String(p.active!==false);
+  $('prodFormTitle').textContent='Edit Product';
+  window.scrollTo(0,0);
+}
+$('clearProduct').onclick=()=>{
+  ['productId','pName','pCategory','pPrice','pBadge','pImages','pDesc','pOriginalPrice','pStockCount','pRating'].forEach(id=>$(id).value='');
+  $('pActive').value='true';
+  $('prodFormTitle').textContent='Add / Edit Product';
+};
+$('saveProduct').onclick=async()=>{
+  const btn=$('saveProduct');btn.disabled=true;btn.textContent='Saving...';
+  try{
+    const payload={
+      name:$('pName').value.trim(),
+      category:$('pCategory').value.trim(),
+      price:Number($('pPrice').value||0),
+      badge:$('pBadge').value.trim(),
+      images:$('pImages').value.trim(),
+      description:$('pDesc').value.trim(),
+      original_price:$('pOriginalPrice').value?Number($('pOriginalPrice').value):null,
+      stock_count:$('pStockCount').value?Number($('pStockCount').value):null,
+      rating:$('pRating').value?Number($('pRating').value):null,
+      active:$('pActive').value==='true'
+    };
+    const id=$('productId').value;
+    if(id)await db.collection('products').doc(id).update(payload);
+    else await db.collection('products').add(payload);
+    $('clearProduct').click();
+    loadProductList();
+    alert('Product saved!');
+  }catch(err){alert('Error: '+err.message)}
+  btn.disabled=false;btn.textContent='Save Product';
+};
+async function deleteProduct(id){
+  if(!confirm('Delete this product?'))return;
+  await db.collection('products').doc(id).delete();
+  loadProductList();
+}
+
+/* ---------- Orders ---------- */
+async function loadOrders(){
+  const snap=await db.collection('orders').orderBy('created_at','desc').limit(50).get();
+  const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+  $('ordersList').innerHTML=items.length?items.map(o=>`
+    <div class="prodrow" style="flex-direction:column;align-items:flex-start">
+      <div style="font-weight:700">${esc(o.name)} — Rs. ${o.total||0}</div>
+      <div class="small">${esc(o.phone)} · ${esc(o.city)}</div>
+      <div class="small">${esc(o.address)}</div>
+      <div class="small">Status: ${esc(o.status||'pending')}</div>
+    </div>`).join(''):'<p class="small">No orders yet.</p>';
+}
+</script>
+</body>
+</html>
