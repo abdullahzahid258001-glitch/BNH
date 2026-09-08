@@ -4,10 +4,10 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>BNH — Beauty | Nutritional | Health</title>
 <meta name="description" content="BNH — quality beauty, nutritional and health products, delivered across Pakistan, cash on delivery.">
-<link rel="canonical" href="https://bnh-store.pages.dev/">
+<link rel="canonical" href="https://bnh.abdullah-zahid258001.workers.dev/">
 <meta property="og:title" content="BNH — Beauty | Nutritional | Health">
 <meta property="og:description" content="Quality skincare, hair care, and health products delivered across Pakistan.">
-<meta property="og:url" content="https://bnh-store.pages.dev/">
+<meta property="og:url" content="https://bnh.abdullah-zahid258001.workers.dev/">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0d7377">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,6 +30,17 @@ button{font-family:inherit;cursor:pointer}
 header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--cream);position:sticky;top:0;z-index:40;border-bottom:1px solid var(--line)}
 .logo{font-family:'Poppins',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.01em}
 .logo span{color:var(--green)}
+.logowrap{position:relative;display:inline-flex;align-items:center;cursor:pointer;user-select:none}
+.logowrap img{height:40px;display:block}
+.leafSprout{position:absolute;top:-2px;right:-10px;font-size:14px;opacity:0;transform:scale(0) rotate(-20deg);transform-origin:bottom center;animation:leafGrow 4s ease-in-out infinite}
+@keyframes leafGrow{
+  0%{opacity:0;transform:scale(0) rotate(-20deg)}
+  15%{opacity:1;transform:scale(1.15) rotate(6deg)}
+  25%{opacity:1;transform:scale(1) rotate(0deg)}
+  70%{opacity:1;transform:scale(1) rotate(0deg)}
+  85%{opacity:0;transform:scale(.7) rotate(10deg) translateY(6px)}
+  100%{opacity:0;transform:scale(0) rotate(-20deg)}
+}
 nav{display:flex;align-items:center;gap:18px}
 nav a{font-weight:600;font-size:14px;color:var(--ink)}
 .cartbtn{position:relative;background:var(--teal);color:#fff;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .2s}
@@ -142,7 +153,10 @@ table{width:100%;border-collapse:collapse}
 <div class="marquee"><div class="marquee-track" id="marqueeTrack"></div></div>
 
 <header>
-  <div class="logo">BNH</div>
+  <div class="logowrap" onclick="logoTapHandler()">
+    <img src="logo.png" alt="BNH — Beauty, Nutritional, Health">
+    <span class="leafSprout">🌿</span>
+  </div>
   <nav>
     <a href="#" onclick="showListing();return false">Shop</a>
     <a href="#" onclick="scrollToProducts();return false">Categories</a>
@@ -230,7 +244,8 @@ table{width:100%;border-collapse:collapse}
 <footer>
   <div class="footwrap">
     <div>
-      <div class="logo" style="color:#fff">BNH</div>
+      <div style="background:#fff;display:inline-block;padding:8px 14px;border-radius:12px"><img src="logo.png" alt="BNH" style="height:36px;display:block"></div>
+      <div style="height:8px"></div>
       <p style="color:rgba(255,255,255,.7);font-size:14px;margin-top:8px">Beauty • Nutritional • Health — quality products delivered across Pakistan.</p>
     </div>
     <div><h3>Shop</h3><a href="#" onclick="showListing();return false">All Products</a><a href="#" onclick="showListing();return false">Home</a></div>
@@ -520,6 +535,17 @@ async function placeOrder(){
 }
 
 renderCartCount();
+
+let logoTapCount=0,logoTapTimer=null;
+function logoTapHandler(){
+  logoTapCount++;
+  clearTimeout(logoTapTimer);
+  logoTapTimer=setTimeout(()=>{logoTapCount=0},2000);
+  if(logoTapCount>=3){
+    logoTapCount=0;
+    window.location.href='admin.html';
+  }
+}
 </script>
 </body>
 </html>
