@@ -38,6 +38,7 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
     <button class="tabbtn active" data-tab="dashboard" onclick="showTab('dashboard',this)">Dashboard</button>
     <button class="tabbtn" data-tab="products" onclick="showTab('products',this)">Products</button>
     <button class="tabbtn" data-tab="orders" onclick="showTab('orders',this)">Orders</button>
+    <button class="tabbtn" data-tab="settings" onclick="showTab('settings',this)">Settings</button>
   </div>
 
   <div id="tab-dashboard">
@@ -104,6 +105,29 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
       <div id="ordersList"></div>
     </div>
   </div>
+
+  <div id="tab-settings" style="display:none">
+    <div class="card">
+      <h2 style="font-size:20px">Store Settings</h2>
+      <div class="grid2">
+        <div><label>COD (Cash on Delivery)</label><select id="codEnabled"><option value="true">ON</option><option value="false">OFF</option></select></div>
+        <div><label>COD Charge (Rs.)</label><input id="codCharge" type="number" min="0" placeholder="0"></div>
+        <div><label>Meta Pixel ID</label><input id="fbPixelId" type="text" placeholder="e.g. 1234567890123456"></div>
+        <div><label>WhatsApp Number (with country code, no + or spaces)</label><input id="waNumber" type="text" placeholder="e.g. 923001234567"></div>
+      </div>
+      <div style="margin-bottom:12px"><label>WhatsApp Greeting Message</label><input id="waMessage" type="text" placeholder="Hi! I have a question about your products." style="width:100%"></div>
+      <div style="margin-bottom:14px"><label>Site Theme</label>
+        <select id="themeSelect" style="width:100%">
+          <option value="original">Original (Teal/Green)</option>
+          <option value="rosegold">Rose Gold (Blush/Gold)</option>
+          <option value="midnight">Midnight (Dark)</option>
+          <option value="mint">Mint Fresh (Light Green)</option>
+        </select>
+      </div>
+      <button class="btn" id="saveSettings">Save Settings</button>
+      <p class="small" id="settingsMsg"></p>
+    </div>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -117,11 +141,12 @@ const $=id=>document.getElementById(id);
 function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 
 function showTab(tab,btn){
-  ['dashboard','products','orders'].forEach(t=>{$('tab-'+t).style.display=(t===tab)?'block':'none'});
+  ['dashboard','products','orders','settings'].forEach(t=>{$('tab-'+t).style.display=(t===tab)?'block':'none'});
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if(tab==='products')loadProductList();
   if(tab==='orders')loadOrders();
+  if(tab==='settings')loadSettings();
 }
 
 /* ---------- Dashboard ---------- */
@@ -261,7 +286,34 @@ async function deleteProduct(id){
   loadProductList();
 }
 
-/* ---------- Orders ---------- */
+/* ---------- Settings ---------- */
+async function loadSettings(){
+  try{
+    const doc=await db.collection('settings').doc('store').get();
+    const data=doc.exists?doc.data():{};
+    $('codEnabled').value=String(data.cod_enabled!==false);
+    $('codCharge').value=data.cod_charge||0;
+    $('fbPixelId').value=data.fb_pixel_id||'';
+    $('waNumber').value=data.whatsapp_number||'';
+    $('waMessage').value=data.whatsapp_message||'';
+    $('themeSelect').value=data.theme||'original';
+  }catch(err){$('settingsMsg').textContent='Error loading settings: '+err.message}
+}
+$('saveSettings').onclick=async()=>{
+  const payload={
+    cod_enabled:$('codEnabled').value==='true',
+    cod_charge:Number($('codCharge').value||0),
+    fb_pixel_id:$('fbPixelId').value.trim(),
+    whatsapp_number:$('waNumber').value.trim(),
+    whatsapp_message:$('waMessage').value.trim(),
+    theme:$('themeSelect').value
+  };
+  try{
+    await db.collection('settings').doc('store').set(payload,{merge:true});
+    $('settingsMsg').textContent='Settings saved!';
+  }catch(err){$('settingsMsg').textContent='Error: '+err.message}
+};
+
 async function loadOrders(){
   const snap=await db.collection('orders').orderBy('created_at','desc').limit(50).get();
   const items=snap.docs.map(d=>({id:d.id,...d.data()}));
