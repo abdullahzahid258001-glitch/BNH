@@ -289,13 +289,24 @@ function setupWhatsappButton(){
   if(floatBtn){floatBtn.href=link;floatBtn.style.display=num?'flex':'none'}
   if(footBtn)footBtn.href=link;
 }
+function getEffectiveCod(){
+  let enabled=!!storeSettings.cod_enabled;
+  let charge=Number(storeSettings.cod_charge||0);
+  for(const item of cart){
+    const p=products.find(pr=>pr.id===item.id);
+    if(p&&p.cod_enabled===false){enabled=false}
+    if(p&&(p.cod_charge===0||p.cod_charge))charge=Math.max(charge,Number(p.cod_charge));
+  }
+  return {enabled,charge};
+}
 function applyCodSettings(){
   const codText=$('codText');
   if(!codText)return;
-  if(!storeSettings.cod_enabled){
+  const {enabled,charge}=getEffectiveCod();
+  if(!enabled){
     codText.textContent='Cash on Delivery is currently unavailable — please contact us on WhatsApp to order.';
-  }else if(storeSettings.cod_charge>0){
-    codText.textContent=`Payment: Cash on Delivery (+${fmt(storeSettings.cod_charge)} COD charge)`;
+  }else if(charge>0){
+    codText.textContent=`Payment: Cash on Delivery (+${fmt(charge)} COD charge)`;
   }else{
     codText.textContent='Payment: Cash on Delivery';
   }
@@ -560,15 +571,17 @@ function changeQty(idx,delta){
 }
 function goToCheckout(){
   trackEvent('checkout_start');
+  applyCodSettings();
   closeAllDrawers();
   $('overlay').classList.add('open');
   $('checkoutDrawer').classList.add('open');
 }
 async function placeOrder(){
-  if(!storeSettings.cod_enabled){alert('Cash on Delivery is currently unavailable. Please contact us on WhatsApp to place your order.');return}
+  const {enabled,charge}=getEffectiveCod();
+  if(!enabled){alert('Cash on Delivery is currently unavailable for one or more items in your cart. Please contact us on WhatsApp to place your order.');return}
   const name=$('coName').value.trim(),phone=$('coPhone').value.trim(),city=$('coCity').value.trim(),address=$('coAddress').value.trim();
   if(!name||!phone||!city||!address){alert('Please fill all required fields');return}
-  const codCharge=Number(storeSettings.cod_charge||0);
+  const codCharge=charge;
   const subtotal=cart.reduce((s,i)=>s+i.price*i.quantity,0);
   const total=subtotal+codCharge;
   try{
