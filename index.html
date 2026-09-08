@@ -273,7 +273,7 @@ const $=id=>document.getElementById(id);
 function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function fmt(n){return 'Rs. '+Number(n||0).toLocaleString('en-PK')}
 
-const marqueeMsgs=['Beauty','Nutritional','Health'];
+const marqueeMsgs=['💄 Beauty','🌿 Nutritional','❤️ Health'];
 $('marqueeTrack').innerHTML=marqueeMsgs.concat(marqueeMsgs).map(m=>`<span>${esc(m)}</span>`).join('');
 
 let storeSettings={cod_enabled:true,cod_charge:0,fb_pixel_id:'',theme:'original',whatsapp_number:'',whatsapp_message:''};

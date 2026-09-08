@@ -143,6 +143,8 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
 const firebaseConfig={apiKey:"AIzaSyBQjznWQmgiUTY-997raAlVRHJGdvsJ_tM",authDomain:"bnho-e1ec4.firebaseapp.com",projectId:"bnho-e1ec4",storageBucket:"bnho-e1ec4.firebasestorage.app",messagingSenderId:"965466036103",appId:"1:965466036103:web:cfc2d5f0f05baff6066522"};
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
+const $=id=>document.getElementById(id);
+function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function getStorage(){
   try{return firebase.storage()}catch(err){console.error('Firebase Storage not available:',err);return null}
 }
@@ -204,8 +206,6 @@ async function uploadProductImages(){
   }
   return urls;
 }
-const $=id=>document.getElementById(id);
-function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 
 function showTab(tab,btn){
   ['dashboard','products','orders','settings'].forEach(t=>{$('tab-'+t).style.display=(t===tab)?'block':'none'});
