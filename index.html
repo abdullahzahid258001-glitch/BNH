@@ -247,7 +247,7 @@ table{width:100%;border-collapse:collapse}
 <footer>
   <div class="footwrap">
     <div>
-      <div style="background:#fff;display:inline-block;padding:8px 14px;border-radius:12px"><img src="logo.png" alt="BNH" style="height:36px;display:block"></div>
+      <img src="logo.png" alt="BNH" style="height:44px;display:block">
       <div style="height:8px"></div>
       <p style="color:rgba(255,255,255,.7);font-size:14px;margin-top:8px">Beauty • Nutritional • Health — quality products delivered across Pakistan.</p>
     </div>
@@ -273,7 +273,7 @@ const $=id=>document.getElementById(id);
 function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function fmt(n){return 'Rs. '+Number(n||0).toLocaleString('en-PK')}
 
-const marqueeMsgs=['✨ Beauty • Nutritional • Health','🚚 Cash on Delivery Across Pakistan','🌿 100% Original Products','💚 Free Delivery on Orders Above Rs. 2000'];
+const marqueeMsgs=['Beauty','Nutritional','Health'];
 $('marqueeTrack').innerHTML=marqueeMsgs.concat(marqueeMsgs).map(m=>`<span>${esc(m)}</span>`).join('');
 
 let storeSettings={cod_enabled:true,cod_charge:0,fb_pixel_id:'',theme:'original',whatsapp_number:'',whatsapp_message:''};

@@ -33,7 +33,7 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
 </head>
 <body>
 <div class="wrap">
-  <h1>BNH Admin</h1>
+  <h1>BNH Admin <a href="index.html" style="font-size:13px;color:var(--muted);text-decoration:none;font-weight:600;margin-left:10px">&larr; Back to Store</a></h1>
   <div class="tabs">
     <button class="tabbtn active" data-tab="dashboard" onclick="showTab('dashboard',this)">Dashboard</button>
     <button class="tabbtn" data-tab="products" onclick="showTab('products',this)">Products</button>
@@ -143,7 +143,9 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
 const firebaseConfig={apiKey:"AIzaSyBQjznWQmgiUTY-997raAlVRHJGdvsJ_tM",authDomain:"bnho-e1ec4.firebaseapp.com",projectId:"bnho-e1ec4",storageBucket:"bnho-e1ec4.firebasestorage.app",messagingSenderId:"965466036103",appId:"1:965466036103:web:cfc2d5f0f05baff6066522"};
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
-const storage=firebase.storage();
+function getStorage(){
+  try{return firebase.storage()}catch(err){console.error('Firebase Storage not available:',err);return null}
+}
 
 function showUploadPreview(files){
   const box=$('uploadPreview');
@@ -186,6 +188,8 @@ function compressImage(file,maxSize=1600,quality=0.82){
 async function uploadProductImages(){
   const files=Array.from($('pImageFiles').files||[]);
   if(!files.length)return [];
+  const storage=getStorage();
+  if(!storage)throw new Error('Firebase Storage is not set up yet for this project. Please enable it in Firebase Console, or paste image URLs directly instead.');
   const urls=[];
   for(let file of files){
     if(!file.type.startsWith('image/'))continue;
