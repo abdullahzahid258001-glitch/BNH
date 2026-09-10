@@ -43,16 +43,14 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
 
   <div id="tab-dashboard">
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <h2 style="margin:0">Store Analytics</h2>
-        <button class="rangeBtn" style="background:#c0392b;color:#fff;border-color:#c0392b" onclick="resetAnalyticsData()">Reset Data</button>
-      </div>
+      <h2 style="margin:0 0 10px">Store Analytics</h2>
       <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
         <button class="rangeBtn active" data-range="day" onclick="setDashRange('day',this)">Today</button>
         <button class="rangeBtn" data-range="week" onclick="setDashRange('week',this)">This Week</button>
         <button class="rangeBtn" data-range="month" onclick="setDashRange('month',this)">This Month</button>
         <button class="rangeBtn" data-range="all" onclick="setDashRange('all',this)">All Time</button>
         <button class="rangeBtn" data-range="custom" onclick="setDashRange('custom',this)">Custom</button>
+        <button class="rangeBtn" style="background:#c0392b;color:#fff;border-color:#c0392b" onclick="resetAnalyticsData()">Reset Data</button>
       </div>
       <div id="customRangeRow" style="display:none;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:12px">
         <div><label>From</label><input type="date" id="customFrom"></div>

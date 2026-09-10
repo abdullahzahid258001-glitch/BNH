@@ -34,7 +34,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .logo{font-family:'Poppins',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.01em}
 .logo span{color:var(--green)}
 .logowrap{position:relative;display:inline-flex;align-items:center;cursor:pointer;user-select:none}
-.logowrap img{height:56px;display:block}
+.logowrap img{height:76px;display:block}
 .leafSprout{position:absolute;top:-2px;right:-10px;font-size:14px;opacity:0;transform:scale(0) rotate(-20deg);transform-origin:bottom center;animation:leafGrow 4s ease-in-out infinite}
 @keyframes leafGrow{
   0%{opacity:0;transform:scale(0) rotate(-20deg)}
@@ -173,7 +173,6 @@ table{width:100%;border-collapse:collapse}
 <div id="listingView">
   <section class="hero">
     <div class="herowrap">
-      <h1>Beauty. Nutrition.<br>Health.</h1>
       <div class="searchWrap">
         <div class="searchbar">
           <span class="searchicon">🔍</span>
@@ -249,8 +248,8 @@ table{width:100%;border-collapse:collapse}
 <footer>
   <div class="footwrap">
     <div>
-      <img src="logo.png" alt="BNH" style="height:44px;display:block">
-      <div style="height:8px"></div>
+      <div style="background:#fff;display:inline-block;padding:14px 20px;border-radius:14px"><img src="logo.png" alt="BNH" style="height:60px;display:block"></div>
+      <div style="height:12px"></div>
       <p style="color:rgba(255,255,255,.7);font-size:14px;margin-top:8px">Beauty • Nutritional • Health — quality products delivered across Pakistan.</p>
     </div>
     <div><h3>Shop</h3><a href="#" onclick="showListing();return false">All Products</a><a href="#" onclick="showListing();return false">Home</a></div>
@@ -414,6 +413,15 @@ function cardHTML(p){
   </div>`;
 }
 
+const catBannerImages=[
+  [/beauty/i,'https://images.unsplash.com/photo-1608979048467-6194dabc6a3d?fm=jpg&q=70&w=1200&auto=format&fit=crop'],
+  [/nutrition/i,'https://images.unsplash.com/photo-1763668177859-0ed5669a795e?fm=jpg&q=70&w=1200&auto=format&fit=crop'],
+  [/health/i,'https://images.unsplash.com/photo-1758691462123-8a17ae95d203?fm=jpg&q=70&w=1200&auto=format&fit=crop']
+];
+function catBannerImage(cat,fallback){
+  for(const [re,url] of catBannerImages){if(re.test(cat))return url}
+  return fallback;
+}
 function renderProducts(cat){
   const grid=$('productGrid');
   if(!cat||cat==='All'){
@@ -427,7 +435,8 @@ function renderProducts(cat){
     grid.innerHTML=cats.map(c=>{
       const items=products.filter(p=>(p.category||'General')===c);
       if(!items.length)return '';
-      const bannerImg=(items[0].images||items[0].image_url||'').split(',')[0].trim();
+      const fallbackImg=(items[0].images||items[0].image_url||'').split(',')[0].trim();
+      const bannerImg=catBannerImage(c,fallbackImg);
       const bannerHTML=bannerImg?`<div class="catBanner"><img src="${bannerImg}" alt="${esc(c)}"><span class="catBannerLabel">${esc(c)}</span></div>`:'';
       return `<div class="catSection">${bannerHTML}<h2 class="sectitle" style="font-size:20px;margin-top:12px">${esc(c)}</h2><div class="catScroll">${items.map(cardHTML).join('')}</div></div>`;
     }).join('');
