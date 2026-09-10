@@ -5,7 +5,7 @@
 <title>BNH Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--teal:#0d7377;--tealdark:#0a5559;--green:#3fae4f;--gold:#e8a13d;--ink:#12242a;--muted:#6b7c7d;--line:#dcece9;--bg:#f4faf9}
+:root{--teal:#1e6b3e;--tealdark:#164f2e;--green:#5a9c5f;--gold:#e8a13d;--ink:#14261a;--muted:#6b7c6f;--line:#dfeee1;--bg:#ffffff}
 *{box-sizing:border-box}
 body{margin:0;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink)}
 h1,h2{font-family:'Poppins',sans-serif;font-weight:800}
@@ -43,7 +43,10 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
 
   <div id="tab-dashboard">
     <div class="card">
-      <h2>Store Analytics</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0">Store Analytics</h2>
+        <button class="rangeBtn" style="background:#c0392b;color:#fff;border-color:#c0392b" onclick="resetAnalyticsData()">Reset Data</button>
+      </div>
       <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
         <button class="rangeBtn active" data-range="day" onclick="setDashRange('day',this)">Today</button>
         <button class="rangeBtn" data-range="week" onclick="setDashRange('week',this)">This Week</button>
@@ -315,6 +318,27 @@ function renderDashChart(visitors,addCart,checkout,orders){
   });
 }
 loadDashboard();
+
+async function resetAnalyticsData(){
+  if(!confirm('This will permanently delete ALL analytics data (visitors, cart adds, checkouts). Products and orders will NOT be affected. Continue?'))return;
+  if(!confirm('Are you absolutely sure? This cannot be undone.'))return;
+  try{
+    $('dashRange').textContent='Deleting old data...';
+    let deleted=0;
+    while(true){
+      const snap=await db.collection('analytics_events').limit(400).get();
+      if(snap.empty)break;
+      const batch=db.batch();
+      snap.docs.forEach(doc=>batch.delete(doc.ref));
+      await batch.commit();
+      deleted+=snap.size;
+    }
+    alert(`Deleted ${deleted} analytics records.`);
+    loadDashboard();
+  }catch(err){
+    alert('Error resetting data: '+err.message);
+  }
+}
 
 /* ---------- Products ---------- */
 async function loadProductList(){
