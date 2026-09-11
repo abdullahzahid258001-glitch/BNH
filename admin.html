@@ -5,7 +5,7 @@
 <title>BNH Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--teal:#1e6b3e;--tealdark:#164f2e;--green:#5a9c5f;--gold:#e8a13d;--ink:#14261a;--muted:#6b7c6f;--line:#dfeee1;--bg:#ffffff}
+:root{--teal:#ec7fa9;--tealdark:#d15d8a;--green:#8ecae6;--gold:#ffb4a2;--ink:#3d3040;--muted:#9a8a95;--line:#f5dce6;--bg:#fdf7fa}
 *{box-sizing:border-box}
 body{margin:0;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink)}
 h1,h2{font-family:'Poppins',sans-serif;font-weight:800}
@@ -152,6 +152,13 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
       <button class="btn" id="saveTrending">Save Trending Banner</button>
       <button class="btn" id="clearTrending" style="background:#fff;color:var(--ink);border:1px solid var(--line);margin-left:8px">Remove All Banner Images</button>
       <p class="small" id="trendingMsg"></p>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:20px">Category Offer Banners</h2>
+      <p class="small">Set one banner image per category (shown at the top of that category's section on the homepage). If not set, it auto-shows that category's own product photos instead.</p>
+      <div id="categoryBannerRows"></div>
+      <p class="small" id="categoryBannerMsg"></p>
     </div>
   </div>
 </div>
@@ -429,6 +436,7 @@ async function deleteProduct(id){
 
 /* ---------- Settings ---------- */
 let trendingImages=[];
+let categoryBanners={};
 async function loadSettings(){
   try{
     const doc=await db.collection('settings').doc('store').get();
@@ -441,7 +449,48 @@ async function loadSettings(){
     $('themeSelect').value=data.theme||'original';
     trendingImages=Array.isArray(data.trending_images)?data.trending_images:[];
     renderTrendingCurrentImages();
+    categoryBanners=(data.category_banners&&typeof data.category_banners==='object')?data.category_banners:{};
+    await renderCategoryBannerRows();
   }catch(err){$('settingsMsg').textContent='Error loading settings: '+err.message}
+}
+async function renderCategoryBannerRows(){
+  const box=$('categoryBannerRows');
+  if(!box)return;
+  box.innerHTML='Loading categories...';
+  const snap=await db.collection('products').get();
+  const cats=[...new Set(snap.docs.map(d=>d.data().category||'General'))];
+  if(!cats.length){box.innerHTML='<p class="small">Add some products first, then category banners will show up here.</p>';return}
+  box.innerHTML=cats.map(c=>`
+    <div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px">
+      <div style="font-weight:700;margin-bottom:8px">${esc(c)}</div>
+      ${categoryBanners[c]?`<img src="${categoryBanners[c]}" style="width:100%;max-width:220px;height:80px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block">`:'<p class="small">No banner set — auto product photos will be used.</p>'}
+      <input type="file" accept="image/*" id="catBannerFile_${cIdSafe(c)}">
+      <div style="margin-top:8px">
+        <button class="btn" style="padding:8px 12px" onclick="saveCategoryBanner('${c.replace(/'/g,"\\'")}')">Upload &amp; Save</button>
+        ${categoryBanners[c]?`<button class="btn" style="padding:8px 12px;background:#fff;color:var(--ink);border:1px solid var(--line);margin-left:6px" onclick="removeCategoryBanner('${c.replace(/'/g,"\\'")}')">Remove</button>`:''}
+      </div>
+    </div>`).join('');
+}
+function cIdSafe(c){return c.replace(/[^a-zA-Z0-9]/g,'_')}
+async function saveCategoryBanner(cat){
+  const input=$('catBannerFile_'+cIdSafe(cat));
+  const file=input&&input.files&&input.files[0];
+  if(!file){alert('Please choose an image first.');return}
+  try{
+    $('categoryBannerMsg').textContent='Uploading...';
+    const compressed=await compressImage(file);
+    const url=await uploadToCloudinary(compressed,pct=>{$('categoryBannerMsg').textContent=`Uploading — ${pct}%`});
+    categoryBanners[cat]=url;
+    await db.collection('settings').doc('store').set({category_banners:categoryBanners},{merge:true});
+    $('categoryBannerMsg').textContent='Banner saved for '+cat+'!';
+    renderCategoryBannerRows();
+  }catch(err){$('categoryBannerMsg').textContent='Error: '+err.message}
+}
+async function removeCategoryBanner(cat){
+  delete categoryBanners[cat];
+  await db.collection('settings').doc('store').set({category_banners:categoryBanners},{merge:true});
+  $('categoryBannerMsg').textContent='Banner removed for '+cat+'.';
+  renderCategoryBannerRows();
 }
 function renderTrendingCurrentImages(){
   const box=$('trendingCurrentImages');
