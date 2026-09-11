@@ -110,6 +110,13 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
   <div id="tab-orders" style="display:none">
     <div class="card">
       <h2 style="font-size:20px">Orders</h2>
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="rangeBtn active" data-status="all" onclick="setOrderFilter('all',this)">All</button>
+        <button class="rangeBtn" data-status="pending" onclick="setOrderFilter('pending',this)">Pending</button>
+        <button class="rangeBtn" data-status="dispatched" onclick="setOrderFilter('dispatched',this)">Dispatched</button>
+        <button class="rangeBtn" data-status="delivered" onclick="setOrderFilter('delivered',this)">Delivered</button>
+        <button class="rangeBtn" data-status="cancelled" onclick="setOrderFilter('cancelled',this)">Cancelled</button>
+      </div>
       <div id="ordersList"></div>
     </div>
   </div>
@@ -135,6 +142,17 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
       <button class="btn" id="saveSettings">Save Settings</button>
       <p class="small" id="settingsMsg"></p>
     </div>
+
+    <div class="card">
+      <h2 style="font-size:20px">Top Trending Banner</h2>
+      <p class="small">Upload the images you want shown in the homepage's top slider. Leave empty to auto-show one image per category instead.</p>
+      <input id="trendingImageFiles" type="file" accept="image/*" multiple>
+      <div id="trendingUploadPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div>
+      <div style="margin:12px 0"><label>Current Banner Images</label><div id="trendingCurrentImages" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"></div></div>
+      <button class="btn" id="saveTrending">Save Trending Banner</button>
+      <button class="btn" id="clearTrending" style="background:#fff;color:var(--ink);border:1px solid var(--line);margin-left:8px">Remove All Banner Images</button>
+      <p class="small" id="trendingMsg"></p>
+    </div>
   </div>
 </div>
 
@@ -148,8 +166,8 @@ const db=firebase.firestore();
 const $=id=>document.getElementById(id);
 function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 
-function showUploadPreview(files){
-  const box=$('uploadPreview');
+function showUploadPreview(files,boxId){
+  const box=$(boxId||'uploadPreview');
   box.innerHTML='';
   Array.from(files||[]).forEach(file=>{
     if(!file.type.startsWith('image/'))return;
@@ -410,6 +428,7 @@ async function deleteProduct(id){
 }
 
 /* ---------- Settings ---------- */
+let trendingImages=[];
 async function loadSettings(){
   try{
     const doc=await db.collection('settings').doc('store').get();
@@ -420,8 +439,53 @@ async function loadSettings(){
     $('waNumber').value=data.whatsapp_number||'';
     $('waMessage').value=data.whatsapp_message||'';
     $('themeSelect').value=data.theme||'original';
+    trendingImages=Array.isArray(data.trending_images)?data.trending_images:[];
+    renderTrendingCurrentImages();
   }catch(err){$('settingsMsg').textContent='Error loading settings: '+err.message}
 }
+function renderTrendingCurrentImages(){
+  const box=$('trendingCurrentImages');
+  if(!box)return;
+  box.innerHTML=trendingImages.length?trendingImages.map((url,i)=>`
+    <div style="position:relative">
+      <img src="${url}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">
+      <button onclick="removeTrendingImage(${i})" style="position:absolute;top:-6px;right:-6px;background:#c0392b;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:1">✕</button>
+    </div>`).join(''):'<p class="small">No banner images set yet.</p>';
+}
+function removeTrendingImage(i){
+  trendingImages.splice(i,1);
+  renderTrendingCurrentImages();
+}
+$('trendingImageFiles').addEventListener('change',e=>showUploadPreview(e.target.files,'trendingUploadPreview'));
+$('saveTrending').onclick=async()=>{
+  const btn=$('saveTrending');btn.disabled=true;btn.textContent='Saving...';
+  try{
+    const files=Array.from($('trendingImageFiles').files||[]);
+    const newUrls=[];
+    for(let i=0;i<files.length;i++){
+      let file=files[i];
+      if(!file.type.startsWith('image/'))continue;
+      btn.textContent=`Uploading ${i+1}/${files.length}...`;
+      file=await compressImage(file);
+      const url=await uploadToCloudinary(file,pct=>{btn.textContent=`Uploading ${i+1}/${files.length} — ${pct}%`});
+      newUrls.push(url);
+    }
+    trendingImages=[...trendingImages,...newUrls];
+    await db.collection('settings').doc('store').set({trending_images:trendingImages},{merge:true});
+    $('trendingImageFiles').value='';
+    $('trendingUploadPreview').innerHTML='';
+    renderTrendingCurrentImages();
+    $('trendingMsg').textContent='Trending banner saved!';
+  }catch(err){$('trendingMsg').textContent='Error: '+err.message}
+  btn.disabled=false;btn.textContent='Save Trending Banner';
+};
+$('clearTrending').onclick=async()=>{
+  if(!confirm('Remove all trending banner images? The homepage slider will fall back to auto category images.'))return;
+  trendingImages=[];
+  await db.collection('settings').doc('store').set({trending_images:[]},{merge:true});
+  renderTrendingCurrentImages();
+  $('trendingMsg').textContent='Trending banner cleared!';
+};
 $('saveSettings').onclick=async()=>{
   const payload={
     cod_enabled:$('codEnabled').value==='true',
@@ -437,16 +501,52 @@ $('saveSettings').onclick=async()=>{
   }catch(err){$('settingsMsg').textContent='Error: '+err.message}
 };
 
+let currentOrderFilter='all';
+let allOrdersCache=[];
+function setOrderFilter(status,btn){
+  currentOrderFilter=status;
+  document.querySelectorAll('#tab-orders .rangeBtn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderOrdersList();
+}
 async function loadOrders(){
-  const snap=await db.collection('orders').orderBy('created_at','desc').limit(50).get();
-  const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+  const snap=await db.collection('orders').orderBy('created_at','desc').limit(100).get();
+  allOrdersCache=snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderOrdersList();
+}
+function renderOrdersList(){
+  const items=currentOrderFilter==='all'?allOrdersCache:allOrdersCache.filter(o=>(o.status||'pending')===currentOrderFilter);
   $('ordersList').innerHTML=items.length?items.map(o=>`
     <div class="prodrow" style="flex-direction:column;align-items:flex-start">
       <div style="font-weight:700">${esc(o.name)} — Rs. ${o.total||0}</div>
       <div class="small">${esc(o.phone)} · ${esc(o.city)}</div>
       <div class="small">${esc(o.address)}</div>
-      <div class="small">Status: ${esc(o.status||'pending')}</div>
-    </div>`).join(''):'<p class="small">No orders yet.</p>';
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px;width:100%;flex-wrap:wrap">
+        <select onchange="updateOrderStatus('${o.id}',this.value)" style="flex:1;min-width:140px">
+          <option value="pending" ${(!o.status||o.status==='pending')?'selected':''}>Pending</option>
+          <option value="dispatched" ${o.status==='dispatched'?'selected':''}>Dispatched</option>
+          <option value="delivered" ${o.status==='delivered'?'selected':''}>Delivered</option>
+          <option value="cancelled" ${o.status==='cancelled'?'selected':''}>Cancelled</option>
+        </select>
+        <button class="btn" style="padding:8px 12px;background:#c0392b" onclick="deleteOrder('${o.id}')">Delete</button>
+      </div>
+    </div>`).join(''):'<p class="small">No orders in this filter.</p>';
+}
+async function updateOrderStatus(id,status){
+  try{
+    await db.collection('orders').doc(id).update({status});
+    const o=allOrdersCache.find(x=>x.id===id);
+    if(o)o.status=status;
+    renderOrdersList();
+  }catch(err){alert('Error updating status: '+err.message)}
+}
+async function deleteOrder(id){
+  if(!confirm('Delete this order? This cannot be undone.'))return;
+  try{
+    await db.collection('orders').doc(id).delete();
+    allOrdersCache=allOrdersCache.filter(o=>o.id!==id);
+    renderOrdersList();
+  }catch(err){alert('Error deleting order: '+err.message)}
 }
 </script>
 </body>
