@@ -75,7 +75,7 @@ nav a{font-weight:600;font-size:14px;color:var(--ink)}
 .heroTrack{display:flex;transition:transform .6s cubic-bezier(.65,0,.35,1);height:180px}
 @media(min-width:600px){.heroTrack{height:280px}}
 .heroSlide{position:relative;flex:0 0 100%;width:100%;height:100%;cursor:pointer}
-.heroSlide img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;background:#eef7f5}
+.heroSlide img{width:100%;height:100%;object-fit:contain;object-position:center;display:block;background:#eef7f5}
 .heroSlide .heroSlideLabel{position:absolute;left:0;right:0;bottom:0;padding:10px 14px;background:linear-gradient(to top,rgba(0,0,0,.65),transparent);color:#fff;font-size:13px;font-weight:600;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .heroDots{display:flex;gap:6px;justify-content:center;padding:10px 0 2px;background:var(--cream)}
 .heroDot{width:7px;height:7px;border-radius:50%;background:var(--line);transition:background .3s,transform .3s;cursor:pointer}
@@ -97,8 +97,8 @@ nav a{font-weight:600;font-size:14px;color:var(--ink)}
 .catBanner::after{content:'';position:absolute;left:0;right:0;bottom:0;height:60%;background:linear-gradient(to top,rgba(0,0,0,.55),transparent);pointer-events:none}
 .catBannerTrack{display:flex;height:100%;transition:transform .6s cubic-bezier(.65,0,.35,1)}
 .catBannerSlide{flex:0 0 100%;height:100%}
-.catBannerSlide img{width:100%;height:100%;object-fit:cover}
-.catBannerStatic{width:100%;height:100%;object-fit:cover;display:block}
+.catBannerSlide img{width:100%;height:100%;object-fit:contain;background:#f4eef1}
+.catBannerStatic{width:100%;height:100%;object-fit:contain;display:block;background:#f4eef1}
 .catBannerLabel{position:absolute;left:18px;bottom:14px;color:#fff;font-family:'Poppins',sans-serif;font-weight:800;font-size:20px;text-shadow:0 2px 8px rgba(0,0,0,.4);z-index:2}
 .catBannerDots{position:absolute;right:14px;bottom:16px;display:flex;gap:5px;z-index:2}
 .catBannerDot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);transition:background .3s,transform .3s}
