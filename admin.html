@@ -32,8 +32,19 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>BNH Admin <a href="index.html" style="font-size:13px;color:var(--muted);text-decoration:none;font-weight:600;margin-left:10px">&larr; Back to Store</a></h1>
+<div class="wrap" id="loginScreen" style="max-width:380px;padding-top:80px">
+  <div class="card">
+    <h1 style="font-size:22px;margin:0 0 6px">BNH Admin Login</h1>
+    <p class="small" style="margin-bottom:18px">Sign in to manage products, orders and settings.</p>
+    <div style="margin-bottom:12px"><label>Email</label><input id="loginEmail" type="email" style="width:100%" placeholder="you@example.com"></div>
+    <div style="margin-bottom:16px"><label>Password</label><input id="loginPassword" type="password" style="width:100%" placeholder="Password"></div>
+    <button class="btn" id="loginBtn" style="width:100%">Sign In</button>
+    <p class="small" id="loginMsg" style="margin-top:10px;color:#c0392b"></p>
+  </div>
+</div>
+
+<div class="wrap" id="adminApp" style="display:none">
+  <h1>BNH Admin <a href="index.html" style="font-size:13px;color:var(--muted);text-decoration:none;font-weight:600;margin-left:10px">&larr; Back to Store</a> <button id="logoutBtn" style="font-size:13px;color:#c0392b;background:none;border:none;font-weight:600;cursor:pointer;margin-left:10px">Logout</button></h1>
   <div class="tabs">
     <button class="tabbtn active" data-tab="dashboard" onclick="showTab('dashboard',this)">Dashboard</button>
     <button class="tabbtn" data-tab="products" onclick="showTab('products',this)">Products</button>
@@ -176,14 +187,43 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const firebaseConfig={apiKey:"AIzaSyBQjznWQmgiUTY-997raAlVRHJGdvsJ_tM",authDomain:"bnho-e1ec4.firebaseapp.com",projectId:"bnho-e1ec4",storageBucket:"bnho-e1ec4.firebasestorage.app",messagingSenderId:"965466036103",appId:"1:965466036103:web:cfc2d5f0f05baff6066522"};
 firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth();
 const db=firebase.firestore();
 const $=id=>document.getElementById(id);
 function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+auth.onAuthStateChanged(user=>{
+  if(user){
+    $('loginScreen').style.display='none';
+    $('adminApp').style.display='block';
+    loadDashboard();
+  }else{
+    $('loginScreen').style.display='block';
+    $('adminApp').style.display='none';
+  }
+});
+$('loginBtn').onclick=async()=>{
+  const email=$('loginEmail').value.trim();
+  const password=$('loginPassword').value;
+  if(!email||!password){$('loginMsg').textContent='Please enter email and password.';return}
+  $('loginBtn').disabled=true;$('loginBtn').textContent='Signing in...';
+  $('loginMsg').textContent='';
+  try{
+    await auth.signInWithEmailAndPassword(email,password);
+  }catch(err){
+    $('loginMsg').textContent='Login failed: '+(err.message||'Invalid email or password.');
+  }
+  $('loginBtn').disabled=false;$('loginBtn').textContent='Sign In';
+};
+$('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginBtn').click()});
+$('logoutBtn').onclick=()=>auth.signOut();
+
 
 function showUploadPreview(files,boxId){
   const box=$(boxId||'uploadPreview');
@@ -359,7 +399,6 @@ function renderDashChart(visitors,addCart,checkout,orders){
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#6b7c7d'}},y:{beginAtZero:true,grid:{color:'#dcece9'},ticks:{color:'#6b7c7d'}}}}
   });
 }
-loadDashboard();
 
 async function resetAnalyticsData(){
   if(!confirm('This will permanently delete ALL analytics data (visitors, cart adds, checkouts). Products and orders will NOT be affected. Continue?'))return;
