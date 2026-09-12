@@ -306,7 +306,9 @@ async function uploadProductImages(onProgress){
   return urls;
 }
 
+let currentAdminTab='dashboard';
 function showTab(tab,btn,skipHistory){
+  currentAdminTab=tab;
   ['dashboard','products','orders','settings'].forEach(t=>{$('tab-'+t).style.display=(t===tab)?'block':'none'});
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
   const targetBtn=btn||document.querySelector(`.tabbtn[data-tab="${tab}"]`);
@@ -317,10 +319,15 @@ function showTab(tab,btn,skipHistory){
   if(!skipHistory)history.pushState({adminTab:tab},'',location.pathname);
 }
 window.addEventListener('popstate',e=>{
-  const tab=(e.state&&e.state.adminTab)?e.state.adminTab:'dashboard';
-  showTab(tab,null,true);
+  if(e.state&&e.state.adminTab){
+    showTab(e.state.adminTab,null,true);
+  }else{
+    // User tried to go back past admin entirely — trap them here instead of exiting to the storefront.
+    history.pushState({adminTab:currentAdminTab},'',location.pathname);
+  }
 });
 history.replaceState({adminTab:'dashboard'},'',location.pathname);
+history.pushState({adminTab:'dashboard'},'',location.pathname);
 
 /* ---------- Dashboard ---------- */
 let currentDashRange='day';
