@@ -133,14 +133,26 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
       <div style="margin-bottom:12px"><label>WhatsApp Greeting Message</label><input id="waMessage" type="text" placeholder="Hi! I have a question about your products." style="width:100%"></div>
       <div style="margin-bottom:14px"><label>Site Theme</label>
         <select id="themeSelect" style="width:100%">
-          <option value="original">Original (Baby Pink / Sky Blue)</option>
-          <option value="rosegold">Rose Gold (Blush/Gold)</option>
-          <option value="midnight">Midnight (Dark)</option>
-          <option value="mint">Mint Fresh (Light Green)</option>
+          <option value="original">Baby Pink / Sky Blue</option>
+          <option value="rosegold">Peach / Pearl</option>
+          <option value="midnight">Lavender Mist</option>
+          <option value="mint">Mint Fresh</option>
         </select>
       </div>
       <button class="btn" id="saveSettings">Save Settings</button>
       <p class="small" id="settingsMsg"></p>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:20px">Store Logo</h2>
+      <p class="small">Upload your logo — it replaces the default logo shown on the storefront header immediately.</p>
+      <img id="currentLogoPreview" src="logo.png" style="height:56px;display:block;margin-bottom:10px;background:#f7f7f7;border-radius:8px;padding:6px">
+      <input id="logoFile" type="file" accept="image/*">
+      <div style="margin-top:10px">
+        <button class="btn" id="saveLogo">Upload &amp; Use This Logo</button>
+        <button class="btn" id="resetLogo" style="background:#fff;color:var(--ink);border:1px solid var(--line);margin-left:8px">Reset to Default</button>
+      </div>
+      <p class="small" id="logoMsg"></p>
     </div>
 
     <div class="card">
@@ -254,14 +266,21 @@ async function uploadProductImages(onProgress){
   return urls;
 }
 
-function showTab(tab,btn){
+function showTab(tab,btn,skipHistory){
   ['dashboard','products','orders','settings'].forEach(t=>{$('tab-'+t).style.display=(t===tab)?'block':'none'});
   document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+  const targetBtn=btn||document.querySelector(`.tabbtn[data-tab="${tab}"]`);
+  if(targetBtn)targetBtn.classList.add('active');
   if(tab==='products')loadProductList();
   if(tab==='orders')loadOrders();
   if(tab==='settings')loadSettings();
+  if(!skipHistory)history.pushState({adminTab:tab},'',location.pathname);
 }
+window.addEventListener('popstate',e=>{
+  const tab=(e.state&&e.state.adminTab)?e.state.adminTab:'dashboard';
+  showTab(tab,null,true);
+});
+history.replaceState({adminTab:'dashboard'},'',location.pathname);
 
 /* ---------- Dashboard ---------- */
 let currentDashRange='day';
@@ -449,10 +468,31 @@ async function loadSettings(){
     $('themeSelect').value=data.theme||'original';
     trendingImages=Array.isArray(data.trending_images)?data.trending_images:[];
     renderTrendingCurrentImages();
+    if(data.logo_url)$('currentLogoPreview').src=data.logo_url;
     categoryBanners=(data.category_banners&&typeof data.category_banners==='object')?data.category_banners:{};
     await renderCategoryBannerRows();
   }catch(err){$('settingsMsg').textContent='Error loading settings: '+err.message}
 }
+$('saveLogo').onclick=async()=>{
+  const file=$('logoFile').files&&$('logoFile').files[0];
+  if(!file){alert('Please choose a logo image first.');return}
+  const btn=$('saveLogo');btn.disabled=true;btn.textContent='Uploading...';
+  try{
+    const compressed=await compressImage(file,800,0.85);
+    const url=await uploadToCloudinary(compressed,pct=>{btn.textContent=`Uploading — ${pct}%`});
+    await db.collection('settings').doc('store').set({logo_url:url},{merge:true});
+    $('currentLogoPreview').src=url;
+    $('logoFile').value='';
+    $('logoMsg').textContent='Logo updated! It will show on the storefront now.';
+  }catch(err){$('logoMsg').textContent='Error: '+err.message}
+  btn.disabled=false;btn.textContent='Upload & Use This Logo';
+};
+$('resetLogo').onclick=async()=>{
+  if(!confirm('Reset to the default logo.png file?'))return;
+  await db.collection('settings').doc('store').set({logo_url:null},{merge:true});
+  $('currentLogoPreview').src='logo.png';
+  $('logoMsg').textContent='Reset to default logo.';
+};
 async function renderCategoryBannerRows(){
   const box=$('categoryBannerRows');
   if(!box)return;

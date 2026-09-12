@@ -14,9 +14,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--teal:#ec7fa9;--tealdark:#d15d8a;--green:#8ecae6;--gold:#ffb4a2;--ink:#3d3040;--muted:#9a8a95;--line:#f5dce6;--card:#ffffff;--cream:#fdf7fa;--radius:16px}
-body.theme-rosegold{--teal:#c9857a;--tealdark:#a8655b;--green:#d4a574;--gold:#e8b04d;--ink:#2b1a17;--muted:#8a7570;--line:#f0ddd6;--card:#ffffff;--cream:#fdf5f2}
-body.theme-midnight{--teal:#3fb8b0;--tealdark:#2a8a84;--green:#5fd97a;--gold:#f0c14b;--ink:#0d1a1c;--muted:#7a9a97;--line:#1c3538;--card:#132628;--cream:#0a1516}
-body.theme-mint{--teal:#2fa88a;--tealdark:#1f7d66;--green:#6fcf7a;--gold:#f2b84b;--ink:#12241c;--muted:#6b8a78;--line:#d6ede0;--card:#ffffff;--cream:#f2fbf5}
+body.theme-rosegold{--teal:#f0a58c;--tealdark:#e08a6e;--green:#ffd9c2;--gold:#f6c28b;--ink:#4a352e;--muted:#a68f86;--line:#fbe4d6;--card:#ffffff;--cream:#fffaf6}
+body.theme-midnight{--teal:#b3a6e0;--tealdark:#9686d4;--green:#c9e4f7;--gold:#e0c4f0;--ink:#3a3550;--muted:#9691ad;--line:#e6e1f7;--card:#ffffff;--cream:#faf8ff}
+body.theme-mint{--teal:#7fcbae;--tealdark:#5fb391;--green:#b8ecd6;--gold:#ffd8a8;--ink:#2c4a3e;--muted:#7fa695;--line:#dcf3e9;--card:#ffffff;--cream:#f3fdf8}
 *{box-sizing:border-box}
 body{margin:0;font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 h1,h2,h3,.display{font-family:'Poppins',sans-serif;font-weight:800;letter-spacing:-0.02em}
@@ -70,10 +70,9 @@ nav a{font-weight:600;font-size:14px;color:var(--ink)}
 .searchSuggestItem:last-child{border-bottom:none}
 .searchSuggestItem:hover,.searchSuggestItem:active{background:var(--cream)}
 
-.heroSlider{position:relative;width:100%;max-width:1200px;margin:14px auto 8px;border-radius:20px;overflow:hidden;background:#eef7f5}
-@media(min-width:600px){.heroSlider{margin:16px auto 20px}}
-.heroTrack{display:flex;transition:transform .6s cubic-bezier(.65,0,.35,1);height:180px}
-@media(min-width:600px){.heroTrack{height:280px}}
+.heroSlider{position:relative;width:100%;margin:0 auto;overflow:hidden;background:#eef7f5}
+.heroTrack{display:flex;transition:transform .6s cubic-bezier(.65,0,.35,1);height:62vw;min-height:220px;max-height:420px}
+@media(min-width:600px){.heroTrack{height:38vw;max-height:480px}}
 .heroSlide{position:relative;flex:0 0 100%;width:100%;height:100%;cursor:pointer}
 .heroSlide img{width:100%;height:100%;object-fit:contain;object-position:center;display:block;background:#eef7f5}
 .heroSlide .heroSlideLabel{position:absolute;left:0;right:0;bottom:0;padding:10px 14px;background:linear-gradient(to top,rgba(0,0,0,.65),transparent);color:#fff;font-size:13px;font-weight:600;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -169,7 +168,7 @@ table{width:100%;border-collapse:collapse}
 
 <div class="menuOverlay" id="menuOverlay" onclick="closeMenu()"></div>
 <div class="menuDrawer" id="menuDrawer">
-  <div class="menuDrawerHead"><img src="logo.png" alt="BNH" style="height:34px"><button onclick="closeMenu()" style="background:none;border:none;font-size:20px">✕</button></div>
+  <div class="menuDrawerHead"><img id="menuLogo" src="logo.png" alt="BNH" style="height:34px"><button onclick="closeMenu()" style="background:none;border:none;font-size:20px">✕</button></div>
   <div class="menuDrawerBody">
     <a href="#" onclick="closeMenu();showListing();return false">🏠 Home</a>
     <a href="#" onclick="closeMenu();showListing();scrollToProducts();return false">🛍️ All Products</a>
@@ -185,7 +184,7 @@ table{width:100%;border-collapse:collapse}
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
   </button>
   <div class="logowrap" onclick="logoTapHandler()">
-    <img src="logo.png" alt="BNH — Beauty, Natural, Herbal, Health">
+    <img id="headerLogo" src="logo.png" alt="BNH — Beauty, Natural, Herbal, Health">
   </div>
   <button class="cartbtn" onclick="openCart()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg><span class="cartcount" id="cartCount">0</span></button>
 </header>
@@ -333,6 +332,11 @@ async function loadSettings(){
     applyCodSettings();
     renderHeroSlider();
     renderProducts();
+    if(storeSettings.logo_url){
+      const hl=$('headerLogo'),ml=$('menuLogo');
+      if(hl)hl.src=storeSettings.logo_url;
+      if(ml)ml.src=storeSettings.logo_url;
+    }
   }catch(err){console.error('Failed to load settings',err)}
 }
 loadSettings();
