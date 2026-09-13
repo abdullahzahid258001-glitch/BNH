@@ -25,6 +25,9 @@ img{max-width:100%}
 button{font-family:inherit;cursor:pointer}
 
 /* Top sliding marquee banner */
+#splashScreen{position:fixed;inset:0;background:#fff;z-index:999;display:flex;align-items:center;justify-content:center;transition:opacity .5s ease;opacity:1}
+#splashScreen.fadeOut{opacity:0;pointer-events:none}
+#splashScreen img{width:min(70vw,320px);height:auto}
 .marquee{background:var(--tealdark);color:#fff;overflow:hidden;white-space:nowrap;padding:11px 0;font-size:16px;font-weight:700;letter-spacing:.03em}
 .marquee-track{display:inline-block;padding-left:100%;animation:marquee 22s linear infinite}
 .marquee-track span{margin-right:48px}
@@ -164,6 +167,10 @@ table{width:100%;border-collapse:collapse}
 </head>
 <body>
 
+<div id="splashScreen">
+  <img src="splash_logo.png" alt="BNH">
+</div>
+
 <div class="marquee"><div class="marquee-track" id="marqueeTrack"></div></div>
 
 <div class="menuOverlay" id="menuOverlay" onclick="closeMenu()"></div>
@@ -283,7 +290,7 @@ function fmt(n){return 'Rs. '+Number(n||0).toLocaleString('en-PK')}
 const marqueeMsgs=['Beauty','Nutritional','Health'];
 $('marqueeTrack').innerHTML=marqueeMsgs.concat(marqueeMsgs).map(m=>`<span>${esc(m)}</span>`).join('');
 
-let storeSettings={cod_enabled:true,cod_charge:0,fb_pixel_id:'',theme:'original',whatsapp_number:'',whatsapp_message:'',trending_images:[],category_banners:{}};
+let storeSettings={cod_enabled:true,cod_charge:0,fb_pixel_id:'',theme:'original',whatsapp_number:'',whatsapp_message:'',trending_images:[],category_banners:{},splash_enabled:true};
 function applyTheme(theme){
   document.body.classList.remove('theme-rosegold','theme-midnight','theme-mint');
   if(theme&&theme!=='original')document.body.classList.add('theme-'+theme);
@@ -337,6 +344,10 @@ async function loadSettings(){
       if(hl)hl.src=storeSettings.logo_url;
       if(ml)ml.src=storeSettings.logo_url;
     }
+    if(storeSettings.splash_enabled===false){
+      const splash=$('splashScreen');
+      if(splash){splash.style.transition='none';splash.style.display='none'}
+    }
   }catch(err){console.error('Failed to load settings',err)}
 }
 loadSettings();
@@ -360,6 +371,11 @@ async function loadProducts(){
     products=[];
   }
   renderProducts();renderChips();renderHeroSlider();
+  const pid=new URLSearchParams(window.location.search).get('product');
+  if(pid&&products.find(p=>p.id===pid)){
+    openProduct(pid,true);
+    history.replaceState({view:'product',id:pid},'',location.pathname+'?product='+pid);
+  }
 }
 loadProducts();
 
@@ -590,7 +606,7 @@ window.addEventListener('popstate',e=>{
     $('listingView').style.display='block';
   }
 });
-history.replaceState({view:'listing'},'',location.pathname);
+history.replaceState({view:'listing'},'',location.pathname+location.search);
 function scrollToProducts(){showListing();setTimeout(()=>$('productGrid').scrollIntoView({behavior:'smooth'}),50)}
 
 function saveCart(){localStorage.setItem('bnh_cart',JSON.stringify(cart));renderCartCount()}
@@ -695,6 +711,14 @@ async function placeOrder(){
 }
 
 renderCartCount();
+
+setTimeout(()=>{
+  const splash=document.getElementById('splashScreen');
+  if(splash){
+    splash.classList.add('fadeOut');
+    setTimeout(()=>{splash.style.display='none'},550);
+  }
+},2200);
 
 let logoTapCount=0,logoTapTimer=null;
 function openMenu(){

@@ -150,6 +150,12 @@ th,td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}
           <option value="mint">Mint Fresh</option>
         </select>
       </div>
+      <div style="margin-bottom:14px"><label>Splash Screen (animated logo on site load)</label>
+        <select id="splashEnabled" style="width:100%">
+          <option value="true">ON</option>
+          <option value="false">OFF</option>
+        </select>
+      </div>
       <button class="btn" id="saveSettings">Save Settings</button>
       <p class="small" id="settingsMsg"></p>
     </div>
@@ -439,9 +445,18 @@ async function loadProductList(){
         <div style="font-weight:700">${esc(p.name)}</div>
         <div class="small">${esc(p.category||'')} · Rs. ${p.price||0}</div>
       </div>
+      <button class="btn" style="padding:8px 12px" onclick="copyProductLink('${p.id}')">Copy Link</button>
       <button class="btn" style="padding:8px 12px" onclick='editProduct(${JSON.stringify(p).replace(/'/g,"&#39;")})'>Edit</button>
       <button class="btn" style="padding:8px 12px;background:#c0392b" onclick="deleteProduct('${p.id}')">Delete</button>
     </div>`).join(''):'<p class="small">No products yet.</p>';
+}
+function copyProductLink(id){
+  const url=window.location.origin+'/?product='+id;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(()=>alert('Link copied!\n\n'+url)).catch(()=>prompt('Copy this link:',url));
+  }else{
+    prompt('Copy this link:',url);
+  }
 }
 function editProduct(p){
   $('productId').value=p.id;$('pName').value=p.name||'';$('pCategory').value=p.category||'';$('pPrice').value=p.price||'';
@@ -512,6 +527,7 @@ async function loadSettings(){
     $('waNumber').value=data.whatsapp_number||'';
     $('waMessage').value=data.whatsapp_message||'';
     $('themeSelect').value=data.theme||'original';
+    $('splashEnabled').value=String(data.splash_enabled!==false);
     trendingImages=Array.isArray(data.trending_images)?data.trending_images:[];
     renderTrendingCurrentImages();
     if(data.logo_url)$('currentLogoPreview').src=data.logo_url;
@@ -628,7 +644,8 @@ $('saveSettings').onclick=async()=>{
     fb_pixel_id:$('fbPixelId').value.trim(),
     whatsapp_number:$('waNumber').value.trim(),
     whatsapp_message:$('waMessage').value.trim(),
-    theme:$('themeSelect').value
+    theme:$('themeSelect').value,
+    splash_enabled:$('splashEnabled').value==='true'
   };
   try{
     await db.collection('settings').doc('store').set(payload,{merge:true});
